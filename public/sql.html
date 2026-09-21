@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="de">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="color-scheme" content="dark"><title>Sentinel · SQL-Konsole</title><link rel="stylesheet" href="/styles.css"></head>
+<body class="sql-body">
+  <header class="app-header"><div class="brand"><span class="brand-mark" aria-hidden="true"></span><div><strong>Sentinel</strong><span>SQL-Konsole</span></div></div><div class="header-actions"><a class="header-button" href="/">Zurück zum Dashboard</a></div></header>
+  <main class="sql-main">
+    <section class="sql-intro"><div><h1>Neon SQL-Konsole</h1><p>Befehle laufen direkt gegen die aktuelle Log-Datenbank. Änderungen sind sofort wirksam.</p></div><span class="sql-hint">Max. 20 KB · 15 s Timeout · 500 Ergebniszeilen</span></section>
+    <section class="panel sql-editor-panel"><div class="sql-toolbar"><h2>Eingabe</h2><button id="run-sql" class="run-button" type="button">Ausführen</button></div><textarea id="sql-editor" class="sql-editor" spellcheck="false" aria-label="SQL-Befehl">SELECT severity, count(*) AS events
+FROM audit_events
+GROUP BY severity
+ORDER BY events DESC;</textarea></section>
+    <section class="panel sql-result-panel"><div class="sql-toolbar"><h2>Ergebnis</h2><span id="query-status" class="sql-hint">Strg + Enter zum Ausführen</span></div><div id="sql-output" class="sql-output"><div class="empty"><span>Noch kein Befehl ausgeführt.</span></div></div></section>
+  </main>
+  <script type="module" src="/sql.js"></script>
+</body></html>

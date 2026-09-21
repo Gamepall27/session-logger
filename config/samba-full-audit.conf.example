@@ -1,0 +1,14 @@
+# Add the global log level and the remaining lines to the audited share for
+# SMB-level attribution. The automated setup script creates both sections.
+# This records the Samba username, client IP and file operation. Adjust the
+# success list if read/open traffic is too noisy.
+# Preserve every existing VFS module and append full_audit, for example:
+# vfs objects = catia fruit recycle streams_xattr full_audit
+# Global setting: log level = 1 full_audit:1
+full_audit:prefix = user=%U|ip=%I|share=%S|path=%p
+full_audit:success = connect disconnect mkdir rmdir open close read pread write pwrite create_file rename unlink chmod fchmod chown fchown
+full_audit:failure = connect mkdir rmdir open read pread write pwrite create_file rename unlink chmod fchmod chown fchown
+full_audit:syslog = false
+
+# `full_audit:syslog = false` emits level-1 debug messages. This is useful for
+# containerized Samba because Sentinel can follow the container's stdout log.

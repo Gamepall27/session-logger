@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
+  <title>Sentinel · Raspberry Pi Audit</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand"><span class="brand-mark" aria-hidden="true"></span><div><strong>Sentinel</strong><span>Host-Audit</span></div></div>
+    <div class="header-actions">
+      <a class="header-button" href="/sql">SQL-Konsole</a>
+      <button id="open-reset" class="header-button danger-button" type="button">Datenbank leeren</button>
+      <div class="header-status"><span id="connection-dot" class="status-dot"></span><span id="connection-label">Verbinde…</span><span class="divider"></span><span id="last-refresh">–</span></div>
+    </div>
+  </header>
+
+  <main>
+    <section class="toolbar" aria-label="Ereignisfilter">
+      <label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Pfad, Befehl oder Nachricht durchsuchen" autocomplete="off"></label>
+      <label><span>Zeitraum</span><select id="hours"><option value="1">Letzte Stunde</option><option value="6">6 Stunden</option><option value="24" selected>24 Stunden</option><option value="168">7 Tage</option><option value="720">30 Tage</option><option value="8760">1 Jahr</option></select></label>
+      <label><span>Quelle</span><select id="source"><option value="">Alle Quellen</option></select></label>
+      <label><span>Mindestens</span><select id="severity"><option value="">Alle Schweregrade</option><option value="critical">Kritisch</option><option value="high">Hoch oder höher</option><option value="medium">Mittel oder höher</option><option value="low">Niedrig oder höher</option><option value="info">Info oder höher</option></select></label>
+      <label><span>Aktion</span><select id="action"><option value="">Alle Aktionen</option></select></label>
+      <label><span>Benutzer</span><select id="actor"><option value="">Alle Benutzer</option></select></label>
+      <label><span>Ergebnis</span><select id="success"><option value="">Alle</option><option value="true">Erfolgreich</option><option value="false">Fehlgeschlagen</option></select></label>
+      <button id="reset" class="quiet-button" type="button">Zurücksetzen</button>
+    </section>
+
+    <section class="metrics" aria-label="Zusammenfassung">
+      <article><span>Ereignisse</span><strong id="metric-total">–</strong><small>im gewählten Zeitraum</small></article>
+      <article><span>Hohe Priorität</span><strong id="metric-high">–</strong><small>hoch oder kritisch</small></article>
+      <article><span>Fehlgeschlagen</span><strong id="metric-failed">–</strong><small>z. B. Login-Versuche</small></article>
+      <article><span>Aktive Benutzer</span><strong id="metric-actors">–</strong><small>eindeutige Akteure</small></article>
+      <article class="storage"><span>Log-Speicher</span><strong id="metric-storage">–</strong><small id="storage-detail">Daten + Indizes in Neon</small></article>
+    </section>
+
+    <section class="analysis-grid">
+      <article class="panel timeline-panel">
+        <div class="panel-head"><div><h1>Aktivität im Zeitverlauf</h1><p>Gesamt, fehlgeschlagen und hohe Priorität</p></div><div class="legend"><span><i class="total"></i>Gesamt</span><span><i class="failed"></i>Fehlgeschlagen</span><span><i class="high"></i>Hoch</span></div></div>
+        <div id="timeline" class="chart" role="img" aria-label="Zeitverlauf der Ereignisse"><div class="loading">Zeitreihe wird geladen…</div></div>
+      </article>
+      <article class="panel source-panel">
+        <div class="panel-head"><div><h2>Quellen</h2><p>Verteilung der erfassten Signale</p></div></div>
+        <div id="source-chart" class="donut-wrap"><div class="loading">Lädt…</div></div>
+      </article>
+      <article class="panel ranking-panel">
+        <div class="panel-head"><div><h2>Häufigste Aktionen</h2><p>Wo die meiste Aktivität liegt</p></div></div>
+        <div id="action-bars" class="bars"></div>
+      </article>
+      <article class="panel ranking-panel">
+        <div class="panel-head"><div><h2>Aktivste Benutzer</h2><p>Ereignisse nach Login-UID oder Konto</p></div></div>
+        <div id="actor-bars" class="bars"></div>
+      </article>
+    </section>
+
+    <section class="panel events-panel">
+      <div class="panel-head"><div><h2>Ereignis-Explorer</h2><p>Ein Ereignis öffnen, um Rohdaten und Kontext zu prüfen</p></div><span id="event-count" class="count">–</span></div>
+      <div class="table-scroll"><table><thead><tr>
+        <th aria-sort="descending"><button class="sort-button active" type="button" data-sort="occurred_at">Zeit<span class="sort-mark" aria-hidden="true">↓</span></button></th>
+        <th><button class="sort-button" type="button" data-sort="severity">Priorität<span class="sort-mark" aria-hidden="true">↕</span></button></th>
+        <th><button class="sort-button" type="button" data-sort="source">Quelle<span class="sort-mark" aria-hidden="true">↕</span></button></th>
+        <th><button class="sort-button" type="button" data-sort="actor">Benutzer<span class="sort-mark" aria-hidden="true">↕</span></button></th>
+        <th><button class="sort-button" type="button" data-sort="remote_address">IP-Adresse<span class="sort-mark" aria-hidden="true">↕</span></button></th>
+        <th><button class="sort-button" type="button" data-sort="action">Aktion<span class="sort-mark" aria-hidden="true">↕</span></button></th>
+        <th><button class="sort-button" type="button" data-sort="target">Objekt / Befehl<span class="sort-mark" aria-hidden="true">↕</span></button></th>
+        <th><button class="sort-button" type="button" data-sort="success">Ergebnis<span class="sort-mark" aria-hidden="true">↕</span></button></th>
+      </tr></thead><tbody id="events-body"></tbody></table></div>
+      <div id="empty" class="empty" hidden><strong>Keine Ereignisse gefunden</strong><span>Filter oder Zeitraum anpassen.</span></div>
+    </section>
+  </main>
+
+  <dialog id="details"><div class="drawer-head"><div><span class="eyebrow">Ereignisdetails</span><h2 id="detail-title">–</h2></div><button id="close-details" aria-label="Schließen">×</button></div><dl id="detail-fields"></dl><h3>Metadaten</h3><pre id="detail-json"></pre></dialog>
+  <dialog id="reset-dialog" class="reset-dialog">
+    <form id="reset-form">
+      <div class="confirm-icon" aria-hidden="true">!</div>
+      <h2>Datenbank wirklich leeren?</h2>
+      <p>Alle gespeicherten Ereignisse werden dauerhaft aus Neon gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.</p>
+      <label><span>Zur Bestätigung <strong>ZURÜCKSETZEN</strong> eingeben</span><input id="reset-confirmation" autocomplete="off" spellcheck="false"></label>
+      <p id="reset-error" class="form-error" role="alert" hidden></p>
+      <div class="dialog-actions"><button id="cancel-reset" class="quiet-button" type="button">Abbrechen</button><button id="confirm-reset" class="destructive-button" type="submit" disabled>Endgültig löschen</button></div>
+    </form>
+  </dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
